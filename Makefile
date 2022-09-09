@@ -9,13 +9,14 @@ all: upload
 
 clean:
 	$(MAKE) -C build clean
-	
+
 binary:
 	$(MAKE) -C build all
 	cp build/*.3dsx .
-	
+
 upload: binary
-	3dslink -a $(3DS_IP) nordlicht19.3dsx
-	
+	3dslink -a $(3DS_IP) nordlicht22.3dsx
+
 test: binary
-	cp nordlicht19.3dsx run.3dsx
+	cp nordlicht22.3dsx /mnt/c/temp/run.3dsx
+	/mnt/c/Users/halcy/AppData/Local/citra/nightly-mingw/citra-qt.exe "C:/temp/run.3dsx"

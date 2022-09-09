@@ -455,8 +455,14 @@ bool loadTex3DS(C3D_Tex* tex, C3D_TexCube* cube, const char* path) {
     Tex3DS_Texture t3x = Tex3DS_TextureImportStdio(f, tex, cube, true);
     fclose(f); 
     if (!t3x) {
-        printf("Texture load failure on %s\n", path);
-        return false; 
+        printf("Texture load failure on %s, trying spill\n", path);
+        f = fopen(path, "rb");
+        t3x = Tex3DS_TextureImportStdio(f, tex, cube, false);
+        fclose(f); 
+        if (!t3x) {
+            printf("Final texture load failure on %s\n", path);
+            return false; 
+        }
     }
     
     // Delete the t3x object since we don't need it
@@ -468,8 +474,12 @@ bool loadTex3DS(C3D_Tex* tex, C3D_TexCube* cube, const char* path) {
 bool loadTex3DSMem(C3D_Tex* tex, C3D_TexCube* cube, const void* data, size_t size) {
     Tex3DS_Texture t3x = Tex3DS_TextureImport(data, size, tex, cube, true);
     if (!t3x) {
-        printf("Texture load failure on memory texture.\n");
-        return false; 
+        printf("Texture load failure on memory tex, retrying to spill\n");
+        t3x = Tex3DS_TextureImport(data, size, tex, cube, false);
+        if (!t3x) {
+            printf("Final texture load failure on memory tex\n");
+            return false; 
+        }
     }
     
     // Delete the t3x object since we don't need it

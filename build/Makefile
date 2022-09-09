@@ -2,9 +2,9 @@
 BASEDIR := ../
 
 # Binary name, author name, desc
-TARGET := nordlicht19
+TARGET := nordlicht22
 AUTHOR := SVatG
-DESC := Skate Station
+DESC := Store
 
 # Working directories
 BUILD := $(BASEDIR)/build

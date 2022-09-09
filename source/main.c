@@ -7,8 +7,6 @@
 #include "Tools.h"
 #include "Rocket/sync.h"
 
-#include "Effects.h"
-
 #define CLEAR_COLOR 0x555555FF
 
 C3D_Tex fade_tex;
@@ -48,9 +46,7 @@ double audio_get_row() {
     return (double)sample_pos / (double)SAMPLES_PER_ROW;
 }
 
-/*#ifdef SYNC_PLAYER
-#define DEV_MODE
-#endif*/
+// #define DEV_MODE
 
 #ifndef SYNC_PLAYER
 void audio_pause(void *ignored, int flag) {
@@ -60,7 +56,7 @@ void audio_pause(void *ignored, int flag) {
 
 void audio_set_row(void *ignored, int row) {
     ignored;
-    sample_pos = row * SAMPLES_PER_ROW - AUDIO_BUFSIZE;
+    sample_pos = row * SAMPLES_PER_ROW;
 }
 
 int audio_is_playing(void *d) {
@@ -74,8 +70,8 @@ struct sync_cb rocket_callbakcks = {
 };
 #endif
 
-#define ROCKET_HOST "10.1.1.132"
-//#define ROCKET_HOST "127.0.0.1"
+// #define ROCKET_HOST "192.168.56.1"
+#define ROCKET_HOST "192.168.1.129"
 #define SOC_ALIGN 0x1000
 #define SOC_BUFFERSIZE 0x100000
 
@@ -95,6 +91,9 @@ int connect_rocket() {
 #endif
     return(0);
 }
+
+extern void effectTunnelInit();
+extern void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRight, float row, float iod);
 
 FILE *audioFile;
 u8 audioTempBuf[AUDIO_BUFSIZE * 4];
@@ -154,32 +153,6 @@ int main() {
     bool DUMPFRAMES = false;
     bool DUMPFRAMES_3D = false;
 
-    // Set up effect sequence
-    effect effect_list[10];
-    effect_list[0].init = effectSun2Init;
-    effect_list[0].render = effectSun2Render;
-    effect_list[0].exit = effectSun2Exit;
-    
-    effect_list[1].init = effectSunInit;
-    effect_list[1].render = effectSunRender;
-    effect_list[1].exit = effectSunExit;
-    
-    effect_list[2].init = effectDanceInit;
-    effect_list[2].render = effectDanceRender;
-    effect_list[2].exit = effectDanceExit;
-    
-    effect_list[3].init = effectCoolCubeInit;
-    effect_list[3].render = effectCoolCubeRender;
-    effect_list[3].exit = effectCoolCubeExit;
-    
-    effect_list[4].init = effectTunnelInit;
-    effect_list[4].render = effectTunnelRender;
-    effect_list[4].exit = effectTunnelExit;
-    
-    effect_list[5].init = effectSunInit;
-    effect_list[5].render = effectSunRender;
-    effect_list[5].exit = effectSunExit;
-    
     // Initialize graphics
     gfxInit(GSP_RGBA8_OES, GSP_BGR8_OES, false);
     gfxSet3D(true);
@@ -200,16 +173,6 @@ int main() {
     
     // Open music
     music_bin = readFileMem("romfs:/music2.bin", &music_bin_size, false);
-
-    // Streaming audio loader
-//     audioFile = fopen("romfs:/music2.bin", "rb");
-//     fseek(audioFile, 0, SEEK_END);
-//     music_bin_size = ftell(audioFile);
-//     rewind(audioFile);
-//     
-//     music_bin_play = (u8*)malloc(65536 * sizeof(int16_t));
-//     music_bin_preload = (u8*)malloc(65536 * sizeof(int16_t));
-//     music_preload(0);
     
     // Rocket startup
 #ifndef SYNC_PLAYER
@@ -219,7 +182,6 @@ int main() {
     
     rocket = sync_create_device("sdmc:/sync");
 #else
-//     printf("Loading tracks from romfs...");
     rocket = sync_create_device("romfs:/sync");
 #endif
     if(connect_rocket()) {
@@ -242,8 +204,6 @@ int main() {
     vshader_normalmapping_dvlb = DVLB_ParseFile((u32*)vshader_normalmapping_shbin, vshader_normalmapping_shbin_size);
     shaderProgramInit(&shaderProgramNormalMapping);
     shaderProgramSetVsh(&shaderProgramNormalMapping, &vshader_normalmapping_dvlb->DVLE[0]);
-    
-//     printf("All loaded");
     
     // Sound on
     ndspInit();
@@ -274,7 +234,7 @@ int main() {
     
     // Get first row value
     double row = 0.0;  
-    row = audio_get_row();    
+    row = audio_get_row();
 #ifndef SYNC_PLAYER
     if(sync_update(rocket, (int)floor(row), &rocket_callbakcks, (void *)0)) {
         printf("Lost connection, retrying.\n");
@@ -283,91 +243,14 @@ int main() {
         }
     }
 #endif
-    
-    for(int i = 0; i < 100000; i++) {
-        if(i == 100000 - 1) {
-            printf("");
-        }
-    }
-    
+
+    // Set up effect code
+    effectTunnelInit();
+
     const struct sync_track* sync_fade = sync_get_track(rocket, "global.fade");;
-    const struct sync_track* sync_effect = sync_get_track(rocket, "global.effect");;    
-    
-    // Start up first effect
-    int current_effect = (int)sync_get_val(sync_effect, row + 0.01);
-//     printf("STARTUP @ %d\n", current_effect);
-    effect_list[current_effect].init();
-    
-    char* effect_texts[6] = {
-      //"Nothing really special at the start - we"     
-        "Effect 1: Logos and zoom in\n"
-        "===========================\n"
-        "Nothing really special at the start - \n"
-        "we just zoom in really fast, show a few\n"
-        "logos\n\n"
-        "The space station uses normal mapping\n"
-        "and the sun actually uses the 3DS\n"
-        "procedural texturing unit to generate a\n"
-        "nice detailed texture that is larger\n"
-        "than what the 3DS could usually do.\n\n",
-        "Effect 2: Metaballs\n"
-        "===================\n"
-        "Marching cubes'd and using central\n"
-        "difference normals, trying to do as\n"
-        "little work as we can get away with.\n"
-        "Took forever to debug some memory\n"
-        "issues here - remember to not access\n"
-        "memory you have not malloc'd, kids.\n\n"
-        "Rendered solid once and then again in\n"
-        "an additive pass. There is also a \n"
-        "subtle lighting effect to make it look\n"
-        "like the balls are emitting light.\n\n",
-        "Effect 3: Hyperspace\n"
-        "====================\n"
-        "The FOV of Effect 1 is animated. Not\n"
-        "much to say about this other than that.\n\n"
-        "I fixed a bug in this an hour after the\n"
-        "deadline and had to re-framedump the\n"
-        "part real quick.\n\n",
-        "Effect 4: Greets Cube\n"
-        "=====================\n"
-        "Welcome to the Greet Cube. This is\n"
-        "really mostly texture mapping with a\n"
-        "dynamic, partially translucent texture\n"
-        "with some nice glitchy interior in the\n"
-        "model.\n\n"
-        "The comet ribbons were added because I\n"
-        "thought there wasn't enough going on.\n\n",
-        "Effect 5: Bone Animation\n"
-        "========================\n"
-        "It's straight bone animation. The\n"
-        "movement data was motion captured by\n"
-        "me on a system I happened to have\n"
-        "access to and then synchronized to the\n"
-        "music after the fact.\n\n"
-        "The background is a simple dynamic\n"
-        "starfield texture.\n\n",
-        "Effect 6: Lasertunnel\n"
-        "=====================\n"
-        "A tunnel segment with some dynamic\n"
-        "geometry for the doors. There's always\n"
-        "three segments visible at any given\n"
-        " time. The lasers are recycle from our\n"
-        "last release, but they look a lot\n"
-        "cooler here, in my opinion.\n\n"
-        "That's about it - I hope you enjoyed\n"
-        "our release. If you want to know more,\n"
-        "the source code is available:\n\n"
-        " https://github.com/halcy/nordlicht19\n\n"
-        "Now release 3DS prods, you cowards!\n"
-    };
-    
     int fc = 0;
-    int eff_c = 0;
-    printf(effect_texts[eff_c]);
-    while (aptMainLoop()) {
-//         music_preload(music_bin_play_block + 1);
-        
+
+    while (aptMainLoop()) {        
         if(!DUMPFRAMES) {
             row = audio_get_row();
         }
@@ -384,24 +267,21 @@ int main() {
             }
         }
 #endif
-        int new_effect = (int)sync_get_val(sync_effect, row);
-#ifndef DEV_MODE
-        if(new_effect != -1 && new_effect != current_effect) {
-            effect_list[current_effect].exit();
-            current_effect = new_effect;
-            effect_list[current_effect].init();
-            eff_c++;
-            printf(effect_texts[eff_c]);
-        }
-#endif
 
-        fadeVal = sync_get_val(sync_fade, row);
+        //printf("fadey\n");
+        // Maybe not needed anymore idk
+        /*fadeVal = sync_get_val(sync_fade, row);
         FillBitmap(&fadeBitmap, RGBAf(0.0, 0.0, 0.0, fadeVal));
         GSPGPU_FlushDataCache(fadePixels, 64 * 64 * sizeof(Pixel));
         GX_DisplayTransfer((u32*)fadePixels, GX_BUFFER_DIM(64, 64), (u32*)fade_tex.data, GX_BUFFER_DIM(64, 64), TEXTURE_TRANSFER_FLAGS);
-        gspWaitForPPF();
-        hidScanInput();
+        printf("ppfwait start\n");
+        gspWaitForPPF();*/
 
+        printf("loop start\n");
+        //
+        //printf("ppf\n");
+        hidScanInput();
+        
         // Respond to user input
         u32 kDown = hidKeysDown();
         if (kDown & KEY_START) {
@@ -410,7 +290,9 @@ int main() {
         float slider = osGet3DSliderState();
         float iod = slider / 3.0;
 
-        effect_list[current_effect].render(targetLeft, targetRight, iod, row);
+        printf("draw -------------------- \n");
+        effectTunnelDraw(targetLeft, targetRight, row, iod);
+        printf("Got to return\n");
 
         if(DUMPFRAMES) {
             gspWaitForP3D();
@@ -438,7 +320,9 @@ int main() {
             }
         }
         
-        fc++;   
+        fc++;
+        //gspWaitForPPF();
+        printf("Got to next loop ---------------- \n");
     }
     
     linearFree(fadePixels);

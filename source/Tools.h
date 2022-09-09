@@ -35,7 +35,7 @@
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 
-#include "TextureHack.h"
+#include "Shaders.h"
 
 #include "Rocket/sync.h"
 extern struct sync_device *rocket;
@@ -84,7 +84,7 @@ extern int32_t divf32(int32_t a, int32_t b);
 
 typedef struct { float position[3]; float texcoord[2]; float normal[3]; } vertex;
 typedef struct { float position[3]; float texcoord[2]; float normal[3]; float tangent[3]; } vertex2;
-typedef struct { float position[3]; float bones[4]; float bone_weights[4]; float normal[3]; float texcoord[2]; } vertex_rigged;
+typedef struct { float position[3]; float bones; float normal[3]; float texcoord[2]; } vertex_rigged;
 
 inline void setVert(vertex* vert, vec3_t p, vec2_t t) {
     vert->position[0] = p.x;
@@ -101,12 +101,7 @@ inline void setVertRigged(vertex_rigged* vert, vec3_t p, vec2_t t, int bone) {
     vert->texcoord[0] = t.x;
     vert->texcoord[1] = t.y;
     
-    vert->bones[0] = bone * 3.0;
-    vert->bone_weights[0] = 1.0;
-    for(int i = 1; i < 4; i++) {
-        vert->bones[i] = 0;
-        vert->bone_weights[i] = 0;
-    }
+    vert->bones = bone * 3.0;
 }
 
 inline void setVertNorm(vertex* vert, vec3_t p, vec2_t t, vec3_t n) {

@@ -43,55 +43,60 @@
 ; Inputs (defined as aliases for convenience)
 .alias inpos v0
 .alias inbone_idx v1
-.alias inbone_wgt v2
-.alias innrm v3
-.alias intex v4
+.alias innrm v2
+.alias intex v3
 
 .proc main
     ; Force the w component of inpos to be 1.0
     mov r0.xyz, inpos
     mov r0.w,   ones
+    
 
     ; Zero a 3x4 matrix for the bone transform
-    MOV r10, zeros
-    MOV r11, zeros
-    MOV r12, zeros
+    ;MOV r10, zeros
+    ;MOV r11, zeros
+    ;MOV r12, zeros
     
     ; Bone 0
-    MOVA a0.x, inbone_idx.x
-    MUL r9, bone00[a0.x+0].wzyx, inbone_wgt.xxxx
-    ADD r10, r10, r9
-    MUL r9, bone00[a0.x+1].wzyx, inbone_wgt.xxxx
-    ADD r11, r11, r9
-    MUL r9, bone00[a0.x+2].wzyx, inbone_wgt.xxxx
-    ADD r12, r12, r9
+    ;mov r1, ones
+    ;MOVA a0.x, inbone_idx.x
+    ;MUL r9, bone00[a0.x+0].wzyx, r1.xxxx
+    ;ADD r10, r10, r9
+    ;MUL r9, bone00[a0.x+1].wzyx, r1.xxxx
+    ;ADD r11, r11, r9
+    ;MUL r9, bone00[a0.x+2].wzyx, r1.xxxx
+    ;ADD r12, r12, r9
     
+    MOV r10, bone00[a0.x+0].wzyx
+    MOV r11, bone00[a0.x+1].wzyx
+    MOV r12, bone00[a0.x+2].wzyx
+
     ; Bone 1
-    MOVA a0.x, inbone_idx.y
-    MUL r9, bone00[a0.x+0].wzyx, inbone_wgt.yyyy
-    ADD r10, r10, r9
-    MUL r9, bone00[a0.x+1].wzyx, inbone_wgt.yyyy
-    ADD r11, r11, r9
-    MUL r9, bone00[a0.x+2].wzyx, inbone_wgt.yyyy
-    ADD r12, r12, r9
+    ;MOVA a0.x, inbone_idx.y
+    ;MUL r9, bone00[a0.x+0].wzyx, inbone_wgt.yyyy
+    ;ADD r10, r10, r9
+    ;MUL r9, bone00[a0.x+1].wzyx, inbone_wgt.yyyy
+    ;ADD r11, r11, r9
+    ;MUL r9, bone00[a0.x+2].wzyx, inbone_wgt.yyyy
+    ;ADD r12, r12, r9
     
     ; Bone 2
-    MOVA a0.x, inbone_idx.z
-    MUL r9, bone00[a0.x+0].wzyx, inbone_wgt.zzzz
-    ADD r10, r10, r9
-    MUL r9, bone00[a0.x+1].wzyx, inbone_wgt.zzzz
-    ADD r11, r11, r9
-    MUL r9, bone00[a0.x+2].wzyx, inbone_wgt.zzzz
-    ADD r12, r12, r9
+    ;MOVA a0.x, inbone_idx.z
+    ;MUL r9, bone00[a0.x+0].wzyx, inbone_wgt.zzzz
+    ;ADD r10, r10, r9
+    ;MUL r9, bone00[a0.x+1].wzyx, inbone_wgt.zzzz
+    ;ADD r11, r11, r9
+    ;MUL r9, bone00[a0.x+2].wzyx, inbone_wgt.zzzz
+    ;ADD r12, r12, r9
     
     ; Bone 3
-    MOVA a0.x, inbone_idx.w
-    MUL r9, bone00[a0.x+0].wzyx, inbone_wgt.wwww
-    ADD r10, r10, r9
-    MUL r9, bone00[a0.x+1].wzyx, inbone_wgt.wwww
-    ADD r11, r11, r9
-    MUL r9, bone00[a0.x+2].wzyx, inbone_wgt.wwww
-    ADD r12, r12, r9
+    ;MOVA a0.x, inbone_idx.w
+    ;MUL r9, bone00[a0.x+0].wzyx, inbone_wgt.wwww
+    ;ADD r10, r10, r9
+    ;MUL r9, bone00[a0.x+1].wzyx, inbone_wgt.wwww
+    ;ADD r11, r11, r9
+    ;MUL r9, bone00[a0.x+2].wzyx, inbone_wgt.wwww
+    ;ADD r12, r12, r9
     
     ; Multiply bone matrix onto input position
     dp4 r13.x, r10, r0
