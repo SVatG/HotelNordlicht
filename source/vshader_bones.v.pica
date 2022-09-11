@@ -59,7 +59,7 @@
     
     ; Bone 0
     ;mov r1, ones
-    ;MOVA a0.x, inbone_idx.x
+    MOVA a0.x, inbone_idx.x
     ;MUL r9, bone00[a0.x+0].wzyx, r1.xxxx
     ;ADD r10, r10, r9
     ;MUL r9, bone00[a0.x+1].wzyx, r1.xxxx

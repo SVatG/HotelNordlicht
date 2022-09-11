@@ -71,7 +71,8 @@ struct sync_cb rocket_callbakcks = {
 #endif
 
 // #define ROCKET_HOST "192.168.56.1"
-#define ROCKET_HOST "192.168.1.129"
+// #define ROCKET_HOST "192.168.1.129"
+#define ROCKET_HOST "127.0.0.1"
 #define SOC_ALIGN 0x1000
 #define SOC_BUFFERSIZE 0x100000
 
@@ -277,7 +278,6 @@ int main() {
         printf("ppfwait start\n");
         gspWaitForPPF();*/
 
-        printf("loop start\n");
         //
         //printf("ppf\n");
         hidScanInput();
@@ -290,9 +290,7 @@ int main() {
         float slider = osGet3DSliderState();
         float iod = slider / 3.0;
 
-        printf("draw -------------------- \n");
         effectTunnelDraw(targetLeft, targetRight, row, iod);
-        printf("Got to return\n");
 
         if(DUMPFRAMES) {
             gspWaitForP3D();
@@ -322,7 +320,7 @@ int main() {
         
         fc++;
         //gspWaitForPPF();
-        printf("Got to next loop ---------------- \n");
+        //printf("Got to next loop ---------------- \n");
     }
     
     linearFree(fadePixels);

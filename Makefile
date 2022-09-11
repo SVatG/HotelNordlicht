@@ -19,4 +19,4 @@ upload: binary
 
 test: binary
 	cp nordlicht22.3dsx /mnt/c/temp/run.3dsx
-	/mnt/c/Users/halcy/AppData/Local/citra/nightly-mingw/citra-qt.exe "C:/temp/run.3dsx"
+	/mnt/c/Users/lorenzdiener/AppData/Local/citra/nightly-mingw/citra-qt.exe "C:/temp/run.3dsx"
