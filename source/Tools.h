@@ -84,7 +84,7 @@ extern int32_t divf32(int32_t a, int32_t b);
 
 typedef struct { float position[3]; float texcoord[2]; float normal[3]; } vertex;
 typedef struct { float position[3]; float texcoord[2]; float normal[3]; float tangent[3]; } vertex2;
-typedef struct { float position[3]; float bones; float normal[3]; float texcoord[2]; } vertex_rigged;
+typedef struct { float position[3]; float bones; float normal[3]; float texcoord[4]; } vertex_rigged;
 
 inline void setVert(vertex* vert, vec3_t p, vec2_t t) {
     vert->position[0] = p.x;

@@ -71,8 +71,8 @@ struct sync_cb rocket_callbakcks = {
 #endif
 
 // #define ROCKET_HOST "192.168.56.1"
-// #define ROCKET_HOST "192.168.1.129"
-#define ROCKET_HOST "127.0.0.1"
+#define ROCKET_HOST "192.168.1.129"
+//#define ROCKET_HOST "127.0.0.1"
 #define SOC_ALIGN 0x1000
 #define SOC_BUFFERSIZE 0x100000
 

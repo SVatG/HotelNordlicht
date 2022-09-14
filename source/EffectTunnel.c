@@ -15,13 +15,15 @@
 #include "ModelCorrA.h"
 #include "ModelCorrAStaticVerts.h"
 
+#include "ModelCorrB.h"
+#include "ModelCorrBStaticVerts.h"
+
 // Global data: Matrices
 static int uLocProjection;
 static int uLocModelview;
 static C3D_Mtx projection;
 
 // Global data: Lighting
-const struct sync_track* syncLight;
 static C3D_LightEnv lightEnv;
 static C3D_Light light;
 static C3D_LightLut lutPhong;
@@ -40,6 +42,9 @@ const struct sync_track* syncZ;
 
 // Boooones
 static int uLocBone[21];
+
+// Other uniforms
+static int uLocTexoff;
 
 // Segment struct
 typedef struct segment segment;
@@ -78,8 +83,12 @@ struct segment {
     // Slots for two textures
     C3D_Tex texALinear;
     C3D_Tex texBLinear;
+    C3D_Tex texCLinear;
+    C3D_Tex texDLinear;
     C3D_Tex texA;
     C3D_Tex texB;
+
+    // {'Tunnel': 0, 'AdSmall': 1, 'AdBig': 2, 'Engine.002': 3, 'Carriage.002': 4, 'Carriage.001': 5, 'Engine.001': 6, 'Door.Right': 7, 'Door.Left': 8, 'AdSmall.001': 9, 'AdSmall.002': 10, 'AdSmall.003': 11}
 
     // Slots for "frame" track and two other tracks
     const struct sync_track* syncA;
@@ -91,6 +100,8 @@ struct segment {
     const struct sync_track* syncG;
     const struct sync_track* syncH;
     const struct sync_track* syncI;
+    const struct sync_track* syncLight;
+    const struct sync_track* syncTexOff;
 
     // Slot for misc data
     void* other;
@@ -126,7 +137,7 @@ void texToVRAM(C3D_Tex* linear, C3D_Tex* vram) {
         printf("Texture upload failed!");
     }
 }
-
+ 
 // The actual segments
 #define SEGMENT_COUNT 8
 segment tunnel[SEGMENT_COUNT];
@@ -143,9 +154,12 @@ void loadSegmentDoors(segment* self) {
 
     // Load textures
     texToVRAM(&self->texALinear, &self->texA);
+    texToVRAM(&self->texCLinear, &self->texB);
     C3D_TexSetFilter(&self->texA, GPU_LINEAR, GPU_LINEAR);
-    C3D_TexSetWrap(&self->texA, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
-    
+    C3D_TexSetWrap(&self->texA, GPU_REPEAT, GPU_REPEAT);
+    C3D_TexSetFilter(&self->texB, GPU_LINEAR, GPU_LINEAR);
+    C3D_TexSetWrap(&self->texB, GPU_REPEAT, GPU_REPEAT);
+
     // Set loaded
     self->loaded = true;
 }
@@ -187,6 +201,10 @@ void drawSegmentDoors(segment* self, float row, C3D_Mtx baseView) {
     setBonesFromSync(self->syncH, row, 16, 16);
     setBonesFromSync(self->syncI, row, 17, 17);
 
+    // Set texcoord offset
+    float texoff = sync_get_val(self->syncTexOff, row);
+    C3D_FVUnifSet(GPU_VERTEX_SHADER, uLocTexoff, texoff, 0.0, 0.0, 0.0);
+
     // Send new modelview
     float rotation = sync_get_val(self->syncA, row);
     Mtx_Translate(&baseView, 0.0, 0.0, -self->length, true);
@@ -197,6 +215,26 @@ void drawSegmentDoors(segment* self, float row, C3D_Mtx baseView) {
 
     // Bind textures
     C3D_TexBind(0, &self->texA);
+    C3D_TexBind(1, &self->texB);
+
+    // Set up lightenv
+    C3D_LightEnvInit(&lightEnv);
+    C3D_LightEnvBind(&lightEnv);
+    
+    LightLut_Phong(&lutPhong, 100.0);
+    C3D_LightEnvLut(&lightEnv, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &lutPhong);
+    
+    LightLut_FromFunc(&lutShittyFresnel, badFresnel, 1.9, false);
+    C3D_LightEnvLut(&lightEnv, GPU_LUT_FR, GPU_LUTINPUT_NV, false, &lutShittyFresnel);
+    C3D_LightEnvFresnel(&lightEnv, GPU_PRI_SEC_ALPHA_FRESNEL);
+    
+    C3D_FVec lightVec = FVec4_New(0.0, 0.0, -4.0, 1.0);
+    C3D_LightInit(&light, &lightEnv);
+
+    float lightStrength = sync_get_val(self->syncLight, row);
+    C3D_LightColor(&light, lightStrength, lightStrength, lightStrength);
+    C3D_LightPosition(&light, &lightVec);
+    C3D_LightEnvMaterial(&lightEnv, &lightMaterial);
 
     // Set up draw env
     C3D_TexEnv* env = C3D_GetTexEnv(0);
@@ -206,7 +244,7 @@ void drawSegmentDoors(segment* self, float row, C3D_Mtx baseView) {
     
     env = C3D_GetTexEnv(1);
     C3D_TexEnvInit(env);
-    C3D_TexEnvSrc(env, C3D_Both, GPU_PREVIOUS, GPU_FRAGMENT_SECONDARY_COLOR, 0);
+    C3D_TexEnvSrc(env, C3D_Both, GPU_PREVIOUS, GPU_TEXTURE1, 0);
     C3D_TexEnvFunc(env, C3D_RGB, GPU_ADD);
 
     // GPU state for normal drawing
@@ -251,7 +289,11 @@ void genSegmentDoors(segment* self, char* syncPrefix) {
     self->syncH = sync_get_track(rocket, paramName);
     sprintf(paramName, "%s.frame", syncPrefix);
     self->syncI = sync_get_track(rocket, paramName);
-
+    sprintf(paramName, "%s.light", syncPrefix);
+    self->syncLight = sync_get_track(rocket, paramName);
+    sprintf(paramName, "%s.texoff", syncPrefix);
+    self->syncTexOff = sync_get_track(rocket, paramName);
+    
     self->loaded = false;
 }
 
@@ -259,10 +301,11 @@ void effectTunnelInit() {
     // Prep general info: Shader
     C3D_BindProgram(&shaderProgramBones);
 
-    // Prep general info: Matrix uniform locs
+    // Prep general info: Uniform locs
     uLocProjection = shaderInstanceGetUniformLocation(shaderProgramBones.vertexShader, "projection");
     uLocModelview = shaderInstanceGetUniformLocation(shaderProgramBones.vertexShader, "modelView");
-
+    uLocTexoff = shaderInstanceGetUniformLocation(shaderProgramBones.vertexShader, "texoff");
+    
     // Prep general info: Bones 
     char boneName[255];
     for(int i = 0; i < 21; i++) {
@@ -277,6 +320,7 @@ void effectTunnelInit() {
     genSegmentDoors(&tunnel[0], "doors");
     loadTexCache(&tunnel[0].texALinear, NULL, "romfs:/tex_corr_real.bin");
     loadTexCache(&tunnel[0].texBLinear, NULL, "romfs:/tex_corr.bin");
+    loadTexCache(&tunnel[0].texCLinear, NULL, "romfs:/tex_disco.bin");
     tunnel[0].load(&tunnel[0]);
     
     for(int i = i; i < SEGMENT_COUNT; i++) {
@@ -288,6 +332,7 @@ void effectTunnelInit() {
         }
         tunnel[i].vbo = tunnel[0].vbo;
         tunnel[i].texA = tunnel[0].texA;
+        tunnel[i].texB = tunnel[0].texB;
         tunnel[i].vertCount = tunnel[0].vertCount;
     }
 }
@@ -299,7 +344,7 @@ void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRigh
     AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 3); // v0 = position
     AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 1); // v1 = bone indices
     AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 3); // v3 = normal        
-    AttrInfo_AddLoader(attrInfo, 3, GPU_FLOAT, 2); // v4 = texcoords
+    AttrInfo_AddLoader(attrInfo, 3, GPU_FLOAT, 4); // v4 = texcoords
 
     C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
 
@@ -308,23 +353,6 @@ void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRigh
 
     // Get Z for overall effect
     float tunnelZ = sync_get_val(syncZ, row);
-
-    // Set up lightenv
-    C3D_LightEnvInit(&lightEnv);
-    C3D_LightEnvBind(&lightEnv);
-    
-    LightLut_Phong(&lutPhong, 100.0);
-    C3D_LightEnvLut(&lightEnv, GPU_LUT_D0, GPU_LUTINPUT_LN, false, &lutPhong);
-    
-    LightLut_FromFunc(&lutShittyFresnel, badFresnel, 1.9, false);
-    C3D_LightEnvLut(&lightEnv, GPU_LUT_FR, GPU_LUTINPUT_NV, false, &lutShittyFresnel);
-    C3D_LightEnvFresnel(&lightEnv, GPU_PRI_SEC_ALPHA_FRESNEL);
-    
-    C3D_FVec lightVec = FVec4_New(0.0, 0.0, -4.0, 1.0);
-    C3D_LightInit(&light, &lightEnv);
-    C3D_LightColor(&light, 1.0, 1.0, 1.0);
-    C3D_LightPosition(&light, &lightVec);
-    C3D_LightEnvMaterial(&lightEnv, &lightMaterial);
 
     // Reset load marker for everything
     for(int i = 0; i < SEGMENT_COUNT; i++) {

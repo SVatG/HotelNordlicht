@@ -117,7 +117,7 @@ for vertexIndex in range(len(vertices)):
     boneIndices = boneIndices[:1] #+ [0] * (4 - len(boneIndices))
     if len(boneIndices) == 0:
         boneIndices = [0]
-        
+
     vertexWeights = vertexWeights[:4] + [0] * (4 - len(vertexWeights))
     # vertexWeights = list(np.array(vertexWeights) / np.sum(np.array(vertexWeights)))
     boneIndices = list(np.array(boneIndices) * 3) # Precalc offset so the shader saves a few muls
@@ -131,7 +131,7 @@ for vertexIndex in range(len(vertices)):
 faceVertexStrings = []
 for vertIndices, faceData in tris:
     for i, idx in enumerate(vertIndices):
-        faceVertexStrings.append("    { " + vertexStrings[idx] + ", {" + ", ".join(faceData[i * 3:(i+1)*3]) + "}, {" + ", ".join(faceData[9 + i * 2:9 + (i+1)*2]) + "} }")
+        faceVertexStrings.append("    { " + vertexStrings[idx] + ", {" + ", ".join(faceData[i * 3:(i+1)*3]) + "}, {" + ", ".join(faceData[9 + i * 4:9 + (i+1)*4]) + "} }")
 
 if maxBones > 0:
     # Animation frames
