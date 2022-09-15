@@ -519,19 +519,19 @@ u8* readFileMem(const char* fileName, u32* fileSize, bool linear) {
 
 // Wait for A B (good for debugging)
 void waitForA() {
-//     while(1) {
+    /*while(1) {
         hidScanInput();
-//         u32 kDown = hidKeysDown();
-//         if (kDown & KEY_A) {
-//             break; // break in order to return to hbmenu
-//         }
-//     }
-//     
-//     while(1) {
+        u32 kDown = hidKeysDown();
+        if (kDown & KEY_A) {
+            break; // break in order to return to hbmenu
+        }
+    }
+    
+    while(1) {
         hidScanInput();
-//         u32 kDown = hidKeysDown();
-//         if (kDown & KEY_B) {
-//             break; // break in order to return to hbmenu
-//         }
-//     }
+         u32 kDown = hidKeysDown();
+         if (kDown & KEY_B) {
+            break; // break in order to return to hbmenu
+        }
+    }*/
 }
