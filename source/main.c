@@ -341,15 +341,19 @@ int main() {
 
         effectTunnelDraw(targetLeft, targetRight, row, iod);
 
-        if(DUMPFRAMES) {
+        if(DUMPFRAMES && fc > 1999) {
             gspWaitForP3D();
             gspWaitForPPF();
             
             u8* fbl = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
             
             char fname[255];
-            sprintf(fname, "3ds/frames2/fb_left_%08d.raw", fc);
-            
+            if(fc < 2000) {
+                sprintf(fname, "3ds/frames/fb_left_%08d.raw", fc);
+            }
+            else {
+                sprintf(fname, "3ds/frames3/fb_left_%08d.raw", fc);
+            }
             FILE* file = fopen(fname,"w");
             fwrite(fbl, sizeof(int32_t), SCREEN_HEIGHT * SCREEN_WIDTH, file);
             fflush(file);
@@ -357,9 +361,12 @@ int main() {
             
             if(DUMPFRAMES_3D) {
                 u8* fbr = gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, NULL, NULL);
-                
-                sprintf(fname, "3ds/frames2/fb_right_%08d.raw", fc);
-                
+                if(fc < 2000) {
+                    sprintf(fname, "3ds/frames/fb_right_%08d.raw", fc);
+                }
+                else {
+                    sprintf(fname, "3ds/frames3/fb_right_%08d.raw", fc);
+                }
                 file = fopen(fname,"w");
                 fwrite(fbr, sizeof(int32_t), SCREEN_HEIGHT * SCREEN_WIDTH, file);
                 fflush(file);

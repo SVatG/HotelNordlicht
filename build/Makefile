@@ -4,7 +4,7 @@ BASEDIR := ../
 # Binary name, author name, desc
 TARGET := nordlicht22
 AUTHOR := SVatG
-DESC := Store
+DESC := Hotel Nordlicht
 
 # Working directories
 BUILD := $(BASEDIR)/build
