@@ -29,7 +29,7 @@ u32 music_bin_size;
 #define AUDIO_BUFSIZE 512
 #define AUDIO_BLOCKSIZE 16384
 
-#define SONG_BPM 173.0
+#define SONG_BPM 129.0
 #define SONG_BPS (SONG_BPM / 60.0)
 #define SONG_SPS 32000
 #define SONG_SPB (SONG_SPS / SONG_BPS)
@@ -260,14 +260,9 @@ int main() {
     wave_buffer[1].data_vaddr = &audio_buffer[AUDIO_BUFSIZE * sizeof(int16_t)];
     wave_buffer[1].nsamples = AUDIO_BUFSIZE;
     
-    // Play music
-    ndspSetCallback(&audio_callback, 0);
-    ndspChnWaveBufAdd(0, &wave_buffer[0]);
-    ndspChnWaveBufAdd(0, &wave_buffer[1]);
-    
     // Get first row value
     double row = 0.0;  
-    row = audio_get_row();
+
 #ifndef SYNC_PLAYER
     if(sync_update(rocket, (int)floor(row), &rocket_callbakcks, (void *)0)) {
         printf("Lost connection, retrying.\n");
@@ -294,6 +289,13 @@ int main() {
     const struct sync_track* sync_fade = sync_get_track(rocket, "global.fade");
     const struct sync_track* sync_img = sync_get_track(rocket, "global.image");
     int fc = 0;
+
+    // Play music
+    ndspSetCallback(&audio_callback, 0);
+    ndspChnWaveBufAdd(0, &wave_buffer[0]);
+    ndspChnWaveBufAdd(0, &wave_buffer[1]);
+    
+    row = audio_get_row();
 
     while (aptMainLoop()) {        
         if(!DUMPFRAMES) {

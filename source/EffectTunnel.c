@@ -400,9 +400,11 @@ void loadSegmentTrain(segment* self) {
     texToVRAM(&self->texALinear, &self->texA);
     C3D_TexSetFilter(&self->texA, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetWrap(&self->texA, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+
     texToVRAM(&self->texBLinear, &self->texB);
     C3D_TexSetFilter(&self->texB, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetWrap(&self->texB, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+
     texToVRAM(&self->texCLinear, &self->texC);
     C3D_TexSetFilter(&self->texC, GPU_LINEAR, GPU_LINEAR);
     C3D_TexSetWrap(&self->texC, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
@@ -529,7 +531,7 @@ void genSegmentTrain(segment* self, char* syncPrefix) {
     self->update = updateSegmentTrain;
     self->draw = drawSegmentTrain;
     self->delete = deleteSegmentTrain;
-    self->length = 1153.928;
+    self->length = 1154.0;
     self->alias = -1;
 
     // Get sync params
@@ -592,6 +594,7 @@ void effectTunnelInit() {
     tunnel[9].vbo = tunnel[8].vbo;
     tunnel[9].texA = tunnel[8].texA;
     tunnel[9].texB = tunnel[8].texB;
+    tunnel[9].texC = tunnel[8].texC;
     tunnel[9].texALinear = tunnel[8].texALinear;
     tunnel[9].texBLinear = tunnel[8].texBLinear;
     tunnel[9].texCLinear = tunnel[8].texCLinear;
