@@ -85,6 +85,7 @@ struct segment {
     C3D_Tex texBLinear;
     C3D_Tex texCLinear;
     C3D_Tex texDLinear;
+    C3D_Tex texELinear;
     C3D_Tex texA;
     C3D_Tex texB;
     C3D_Tex texC;
@@ -146,6 +147,7 @@ segment tunnel[SEGMENT_COUNT];
 
 // Tunnel segment 1: Doors
 bool isTexAInVram = false;
+int texBStatus = -1;
 void loadSegmentDoors(segment* self) {
     // Load vertices
     printf("allocing %d * %d = %d\n", sizeof(vertex_rigged), corrANumVerts, corrANumVerts * sizeof(vertex_rigged));
@@ -156,13 +158,15 @@ void loadSegmentDoors(segment* self) {
     self->vertCount = corrANumVerts;
 
     // Load textures
-    texToVRAM(&self->texALinear, &self->texA);
     isTexAInVram = true;
+    texBStatus = 0;
+    texToVRAM(&self->texALinear, &self->texA);
     texToVRAM(&self->texCLinear, &self->texB);
+    
     C3D_TexSetFilter(&self->texA, GPU_LINEAR, GPU_LINEAR);
-    C3D_TexSetWrap(&self->texA, GPU_REPEAT, GPU_REPEAT);
+    C3D_TexSetWrap(&self->texA, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+
     C3D_TexSetFilter(&self->texB, GPU_LINEAR, GPU_LINEAR);
-    C3D_TexSetWrap(&self->texB, GPU_REPEAT, GPU_REPEAT);
 
     // Set loaded
     self->loaded = true;
@@ -190,11 +194,15 @@ void setBonesFromSync(const struct sync_track* track, float row, int boneFirst, 
 }
 
 void drawSegmentDoors(segment* self, float row, C3D_Mtx baseView) {
+    waitForA("draw doors");
+
     // Add VBO to draw buffer
     C3D_BufInfo* bufInfo = C3D_GetBufInfo();
     BufInfo_Init(bufInfo);
     BufInfo_Add(bufInfo, (void*)self->vbo, sizeof(vertex_rigged), 4, 0x3210);
     
+    waitForA("load bones doors");
+
     // Get frame and push bones
     setBonesFromSync(self->syncB, row, 0, 1);
     setBonesFromSync(self->syncC, row, 2, 3);
@@ -217,35 +225,82 @@ void drawSegmentDoors(segment* self, float row, C3D_Mtx baseView) {
     Mtx_RotateX(&baseView, M_PI * 0.5, true);
     C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLocModelview,  &baseView);
 
+    waitForA("tex bind doors");
+
     // Bind textures
     int texsel = sync_get_val(self->syncTexSel, row);
     if(texsel == 0) {
         if(isTexAInVram == false) {
+            waitForA("del/reload to A");
             C3D_TexDelete(&self->texA);
             texToVRAM(&self->texALinear, &self->texA);
             isTexAInVram = true;
         }
+        waitForA("tex bind doors 1");
         C3D_TexBind(0, &self->texA);
-        C3D_TexBind(1, 0);
+        waitForA("tex bind doors 1x");
+        if(texBStatus != 1) {
+            C3D_TexDelete(&self->texB);
+            texToVRAM(&self->texDLinear, &self->texB);
+            C3D_TexSetWrap(&self->texB, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+            texBStatus = 1;
+        }
+        C3D_TexBind(1, &self->texB);
     }
     if(texsel == 1) {
         if(isTexAInVram == false) {
+            waitForA("del/reload to A");
             C3D_TexDelete(&self->texA);
             texToVRAM(&self->texALinear, &self->texA);
             isTexAInVram = true;
         }
+        waitForA("tex bind doors 1");
         C3D_TexBind(0, &self->texA);
+        waitForA("tex bind doors 1x");
+        if(texBStatus != 2) {
+            C3D_TexDelete(&self->texB);
+            texToVRAM(&self->texELinear, &self->texB);
+            C3D_TexSetWrap(&self->texB, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+            texBStatus = 2;
+        }
         C3D_TexBind(1, &self->texB);
     }
     if(texsel == 2) {
+        if(isTexAInVram == false) {
+            waitForA("del/reload to A");
+            C3D_TexDelete(&self->texA);
+            texToVRAM(&self->texALinear, &self->texA);
+            isTexAInVram = true;
+        }
+        if(texBStatus != 0) {
+            C3D_TexDelete(&self->texB);
+            texToVRAM(&self->texCLinear, &self->texB);
+            C3D_TexSetWrap(&self->texB, GPU_REPEAT, GPU_REPEAT);    
+            texBStatus = 0;
+        }
+        waitForA("tex bind doors 2");
+        C3D_TexBind(0, &self->texA);
+        C3D_TexBind(1, &self->texB);
+    }
+    if(texsel == 3) {
         if(isTexAInVram == true) {
+            waitForA("del/reload to B");
             C3D_TexDelete(&self->texA);
             texToVRAM(&self->texBLinear, &self->texA);
             isTexAInVram = false;
         }
+        waitForA("tex bind doors 3");
         C3D_TexBind(0, &self->texA);
-        C3D_TexBind(1, 0);
+        if(texBStatus != 2) {
+            C3D_TexDelete(&self->texB);
+            texToVRAM(&self->texELinear, &self->texB);
+            C3D_TexSetWrap(&self->texB, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+            texBStatus = 2;
+        }
+        C3D_TexBind(1, &self->texB);
     }
+
+    waitForA("lightenv doors");
 
     // Set up lightenv
     C3D_LightEnvInit(&lightEnv);
@@ -280,6 +335,8 @@ void drawSegmentDoors(segment* self, float row, C3D_Mtx baseView) {
     // GPU state for normal drawing
     C3D_DepthTest(true, GPU_GEQUAL, GPU_WRITE_ALL);
     C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_SRC_ALPHA, GPU_ONE_MINUS_SRC_ALPHA, GPU_SRC_ALPHA, GPU_ONE_MINUS_SRC_ALPHA);
+
+    waitForA("drawcall doors");
 
     // Now draw
     C3D_DrawArrays(GPU_TRIANGLES, 0, self->vertCount);
@@ -342,13 +399,13 @@ void loadSegmentTrain(segment* self) {
     // Load textures
     texToVRAM(&self->texALinear, &self->texA);
     C3D_TexSetFilter(&self->texA, GPU_LINEAR, GPU_LINEAR);
-    C3D_TexSetWrap(&self->texA, GPU_REPEAT, GPU_REPEAT);
+    C3D_TexSetWrap(&self->texA, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
     texToVRAM(&self->texBLinear, &self->texB);
     C3D_TexSetFilter(&self->texB, GPU_LINEAR, GPU_LINEAR);
-    C3D_TexSetWrap(&self->texB, GPU_REPEAT, GPU_REPEAT);
+    C3D_TexSetWrap(&self->texB, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
     texToVRAM(&self->texCLinear, &self->texC);
     C3D_TexSetFilter(&self->texC, GPU_LINEAR, GPU_LINEAR);
-    C3D_TexSetWrap(&self->texC, GPU_REPEAT, GPU_REPEAT);
+    C3D_TexSetWrap(&self->texC, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
 
     // Set loaded
     self->loaded = true;
@@ -376,14 +433,13 @@ void setBonesFromSyncB(const struct sync_track* track, float row, int boneFirst,
 }
 
 void drawSegmentTrain(segment* self, float row, C3D_Mtx baseView) {
+    waitForA("draw train");
+
     // Add VBO to draw buffer
     C3D_BufInfo* bufInfo = C3D_GetBufInfo();
     BufInfo_Init(bufInfo);
     BufInfo_Add(bufInfo, (void*)self->vbo, sizeof(vertex_rigged), 4, 0x3210);
-    
-    //printf(("boneset\n"));
-    waitForA();
-    
+        
     // Get frame and push bones
     setBonesFromSyncB(self->syncB, row, 0, 2);
     setBonesFromSyncB(self->syncB, row, 9, 11);
@@ -403,8 +459,7 @@ void drawSegmentTrain(segment* self, float row, C3D_Mtx baseView) {
     Mtx_Scale(&baseView, 8.0, 8.0, 8.0);
     C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLocModelview,  &baseView);
 
-    //printf(("bind\n"));
-    waitForA();
+    waitForA("bind");
 
     // Bind textures
     int texsel = sync_get_val(self->syncTexSel, row);
@@ -413,12 +468,11 @@ void drawSegmentTrain(segment* self, float row, C3D_Mtx baseView) {
         C3D_TexBind(0, &self->texB);
     }
     if(texsel == 1) {
-        C3D_TexBind(0, &self->texA);
-        C3D_TexBind(1, &self->texC);
+        C3D_TexBind(1, &self->texA);
+        C3D_TexBind(0, &self->texC);
     }
 
-    //printf(("bound\n"));
-    waitForA();
+    waitForA("bound");
 
     // Set up lightenv
     C3D_LightEnvInit(&lightEnv);
@@ -431,8 +485,7 @@ void drawSegmentTrain(segment* self, float row, C3D_Mtx baseView) {
     C3D_LightEnvLut(&lightEnv, GPU_LUT_FR, GPU_LUTINPUT_NV, false, &lutShittyFresnel);
     C3D_LightEnvFresnel(&lightEnv, GPU_PRI_SEC_ALPHA_FRESNEL);
     
-    //printf(("lutset\n"));
-    waitForA();
+    waitForA("draw");
 
     C3D_FVec lightVec = FVec4_New(0.0, 0.0, -4.0, 1.0);
     C3D_LightInit(&light, &lightEnv);
@@ -442,8 +495,7 @@ void drawSegmentTrain(segment* self, float row, C3D_Mtx baseView) {
     C3D_LightPosition(&light, &lightVec);
     C3D_LightEnvMaterial(&lightEnv, &lightMaterial);
 
-    //printf(("lutset\n"));
-    waitForA();
+    waitForA("lutset");
 
     // Set up draw env
     C3D_TexEnv* env = C3D_GetTexEnv(0);
@@ -460,8 +512,7 @@ void drawSegmentTrain(segment* self, float row, C3D_Mtx baseView) {
     C3D_DepthTest(true, GPU_GEQUAL, GPU_WRITE_ALL);
     C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_SRC_ALPHA, GPU_ONE_MINUS_SRC_ALPHA, GPU_SRC_ALPHA, GPU_ONE_MINUS_SRC_ALPHA);
 
-    //printf(("drawcall\n"));
-    waitForA();
+    waitForA("drawcall");
 
     // Now draw
     C3D_DrawArrays(GPU_TRIANGLES, 0, self->vertCount);
@@ -492,7 +543,7 @@ void genSegmentTrain(segment* self, char* syncPrefix) {
     sprintf(paramName, "%s.train", syncPrefix);
     self->syncD = sync_get_track(rocket, paramName);
     sprintf(paramName, "%s.texsel", syncPrefix);
-    self->syncTexOff = sync_get_track(rocket, paramName);
+    self->syncTexSel = sync_get_track(rocket, paramName);
     sprintf(paramName, "%s.light", syncPrefix);
     self->syncLight = sync_get_track(rocket, paramName);
 
@@ -523,24 +574,30 @@ void effectTunnelInit() {
     loadTexCache(&tunnel[0].texALinear, NULL, "romfs:/tex_corr_real.bin");
     loadTexCache(&tunnel[0].texBLinear, NULL, "romfs:/tex_corr.bin");
     loadTexCache(&tunnel[0].texCLinear, NULL, "romfs:/tex_disco.bin");
+    loadTexCache(&tunnel[0].texDLinear, NULL, "romfs:/tex_logo1.bin");
+    loadTexCache(&tunnel[0].texELinear, NULL, "romfs:/tex_logo2.bin");
     tunnel[0].load(&tunnel[0]);
     
-    //printf(("Gen tunnel B\n"));
-    waitForA();
-    genSegmentTrain(&tunnel[1], "train");
-    //printf(("Load tex tunnel B\n"));
-    waitForA();
-    loadTexCache(&tunnel[1].texALinear, NULL, "romfs:/tex_tunnel.bin");
-    loadTexCache(&tunnel[1].texBLinear, NULL, "romfs:/tex_greets1.bin");
-    loadTexCache(&tunnel[1].texCLinear, NULL, "romfs:/tex_greets2.bin");
+    waitForA("gen");
+    genSegmentTrain(&tunnel[8], "train");
+    waitForA("load");
+    loadTexCache(&tunnel[8].texALinear, NULL, "romfs:/tex_tunnel.bin");
+    loadTexCache(&tunnel[8].texBLinear, NULL, "romfs:/tex_greets1.bin");
+    loadTexCache(&tunnel[8].texCLinear, NULL, "romfs:/tex_greets2.bin");
 
-    //printf(("Load tunnel B\n"));
-    waitForA();
-    tunnel[1].load(&tunnel[1]);
-    //printf(("Perform copy\n"));
-    waitForA();
+    waitForA("load B");
+    tunnel[8].load(&tunnel[8]);
+    waitForA("copy");
+    genSegmentTrain(&tunnel[9], "trainOdd");
+    tunnel[9].vbo = tunnel[8].vbo;
+    tunnel[9].texA = tunnel[8].texA;
+    tunnel[9].texB = tunnel[8].texB;
+    tunnel[9].texALinear = tunnel[8].texALinear;
+    tunnel[9].texBLinear = tunnel[8].texBLinear;
+    tunnel[9].texCLinear = tunnel[8].texCLinear;
+    tunnel[9].vertCount = tunnel[8].vertCount;
 
-    for(int i = 2; i < SEGMENT_COUNT; i++) {
+    for(int i = 1; i < 8; i++) {
         if(i % 2 == 0) {
             genSegmentDoors(&tunnel[i], "doors");
         }
@@ -550,16 +607,34 @@ void effectTunnelInit() {
         tunnel[i].vbo = tunnel[0].vbo;
         tunnel[i].texA = tunnel[0].texA;
         tunnel[i].texB = tunnel[0].texB;
+        tunnel[i].texALinear = tunnel[0].texALinear;
+        tunnel[i].texBLinear = tunnel[0].texBLinear;
+        tunnel[i].texCLinear = tunnel[0].texCLinear;
+        tunnel[i].texDLinear = tunnel[0].texDLinear;
+        tunnel[i].texELinear = tunnel[0].texELinear;
         tunnel[i].vertCount = tunnel[0].vertCount;
     }
-    //printf(("done copy\n"));
-    waitForA();
+    for(int i = 10; i < SEGMENT_COUNT; i++) {
+        if(i % 2 == 0) {
+            genSegmentDoors(&tunnel[i], "doors");
+        }
+        else {
+            genSegmentDoors(&tunnel[i], "doorsOdd");
+        }
+        tunnel[i].vbo = tunnel[0].vbo;
+        tunnel[i].texA = tunnel[0].texA;
+        tunnel[i].texB = tunnel[0].texB; 
+        tunnel[i].texALinear = tunnel[0].texALinear;
+        tunnel[i].texBLinear = tunnel[0].texBLinear;
+        tunnel[i].texCLinear = tunnel[0].texCLinear;
+        tunnel[i].texDLinear = tunnel[0].texDLinear;
+        tunnel[i].texELinear = tunnel[0].texELinear;
+        tunnel[i].vertCount = tunnel[0].vertCount;
+    }
+    waitForA("done copy");
 }
 
-void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRight, float row, float iod) {
-    //printf(("draw function called\n"));
-    waitForA();  
-
+void tunnelShadeEnv() {
     // Set up attribute info
     C3D_AttrInfo* attrInfo = C3D_GetAttrInfo();
     AttrInfo_Init(attrInfo);
@@ -572,12 +647,15 @@ void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRigh
 
     C3D_BindProgram(&shaderProgramBones);
     C3D_CullFace(GPU_CULL_BACK_CCW);
+}
+
+void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRight, float row, float iod) {
+    waitForA("etd called");  
 
     // Get Z for overall effect
     float tunnelZ = sync_get_val(syncZ, row);
 
-    //printf(("mark load\n"));
-    waitForA();  
+    waitForA("mark load");  
 
     // Reset load marker for everything
     for(int i = 0; i < SEGMENT_COUNT; i++) {
@@ -606,10 +684,10 @@ void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRigh
         }
     }
 
-    //printf(("before drawcalls\n"));
-    waitForA();        
+    waitForA("before drawcalls");        
 
     // Left eye
+    tunnelShadeEnv();
     C3D_Mtx modelview;
     Mtx_Identity(&modelview);
     Mtx_Translate(&modelview, 0.0, 0.0, tunnelZ, true);
@@ -622,15 +700,16 @@ void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRigh
     // Dispatch drawcalls
     for(int i = 0; i < SEGMENT_COUNT; i++) {
         if(tunnel[i].markLoad == true) {
-            //printf("dispatch %d\n", i);
-            waitForA();
+            waitForA("dispatch");
             tunnel[i].draw(&tunnel[i], row, modelview);
         }
         Mtx_Translate(&modelview, 0.0, 0.0, -tunnel[i].length, true);
     }
+    fade();
 
     // Right eye?
     if(iod > 0.0) {
+        tunnelShadeEnv();
         Mtx_Identity(&modelview);
         Mtx_Translate(&modelview, 0.0, 0.0, tunnelZ, true);
 
@@ -647,10 +726,9 @@ void effectTunnelDraw(C3D_RenderTarget* targetLeft, C3D_RenderTarget* targetRigh
             }
             Mtx_Translate(&modelview, 0.0, 0.0, -tunnel[i].length, true);
         }
+        fade();
     }
-    //printf("Got to frameend\n");
 
     // Swap
     C3D_FrameEnd(0);
-    //printf("swapped\n");
 }

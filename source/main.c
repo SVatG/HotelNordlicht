@@ -73,7 +73,7 @@ struct sync_cb rocket_callbakcks = {
 // #define ROCKET_HOST "192.168.56.1"
 // #define ROCKET_HOST "192.168.1.129"
 // #define ROCKET_HOST "127.0.0.1"
-#define ROCKET_HOST "172.20.10.6"
+#define ROCKET_HOST "192.168.10.129"
 
 #define SOC_ALIGN 0x1000
 #define SOC_BUFFERSIZE 0x100000
@@ -152,6 +152,40 @@ shaderProgram_s shaderProgramSkybox;
 //     }
 // }
 
+// Texture loading: Load into linear memory
+void loadTexCache2(C3D_Tex* tex, C3D_TexCube* cube, const char* path) {
+    FILE* f = fopen(path, "rb");
+    if (!f) {
+        printf("Texture file not found: %s\n", path);
+        return;
+    }
+    
+    Tex3DS_Texture t3x = Tex3DS_TextureImportStdio(f, tex, cube, false);
+    fclose(f); 
+    if (!t3x) {
+        printf("Final texture load failure on %s\n", path);
+        return;
+    }
+    
+    // Delete the t3x object since we don't need it
+    Tex3DS_TextureFree(t3x);
+
+    printf("Free linear memory after tex load: %d\n", linearSpaceFree());
+}
+
+// Texture loading: Linear to VRAM
+void texToVRAM2(C3D_Tex* linear, C3D_Tex* vram) {
+    if(C3D_TexInitVRAM(vram, linear->width, linear->height, linear->fmt)) {
+        C3D_TexLoadImage(vram, linear->data, GPU_TEXFACE_2D, 0);
+    } 
+    else {
+        printf("Texture upload failed!");
+    }
+}
+
+C3D_Tex scrollImgs[8];
+int vramScrollImg = -1;
+
 int main() {    
     bool DUMPFRAMES = false;
     bool DUMPFRAMES_3D = false;
@@ -167,11 +201,7 @@ int main() {
     C3D_RenderTarget* targetRight = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
     C3D_RenderTargetSetOutput(targetLeft, GFX_TOP, GFX_LEFT,  DISPLAY_TRANSFER_FLAGS);
     C3D_RenderTargetSetOutput(targetRight, GFX_TOP, GFX_RIGHT, DISPLAY_TRANSFER_FLAGS);
-
-    fadePixels = (Pixel*)linearAlloc(64 * 64 * sizeof(Pixel));
-    InitialiseBitmap(&fadeBitmap, 64, 64, BytesPerRowForWidth(64), fadePixels);
-    C3D_TexInit(&fade_tex, 64, 64, GPU_RGBA8);
- 
+    
     romfsInit();
     
     // Open music
@@ -247,10 +277,22 @@ int main() {
     }
 #endif
 
+    // Load scroll textures
+    loadTexCache2(&scrollImgs[0], NULL, "romfs:/tex_scroll1.bin");
+    loadTexCache2(&scrollImgs[1], NULL, "romfs:/tex_scroll2.bin");
+    loadTexCache2(&scrollImgs[2], NULL, "romfs:/tex_scroll3.bin");
+    loadTexCache2(&scrollImgs[3], NULL, "romfs:/tex_scroll4.bin");
+    loadTexCache2(&scrollImgs[4], NULL, "romfs:/tex_scroll5.bin");
+    loadTexCache2(&scrollImgs[5], NULL, "romfs:/tex_scroll6.bin");
+    loadTexCache2(&scrollImgs[6], NULL, "romfs:/tex_scroll7.bin");
+    loadTexCache2(&scrollImgs[7], NULL, "romfs:/tex_scroll8.bin");
+    texToVRAM2(&scrollImgs[0], &fade_tex);
+
     // Set up effect code
     effectTunnelInit();
 
-    const struct sync_track* sync_fade = sync_get_track(rocket, "global.fade");;
+    const struct sync_track* sync_fade = sync_get_track(rocket, "global.fade");
+    const struct sync_track* sync_img = sync_get_track(rocket, "global.image");
     int fc = 0;
 
     while (aptMainLoop()) {        
@@ -273,14 +315,17 @@ int main() {
 
         //printf("fadey\n");
         // Maybe not needed anymore idk
-        /*fadeVal = sync_get_val(sync_fade, row);
-        FillBitmap(&fadeBitmap, RGBAf(0.0, 0.0, 0.0, fadeVal));
-        GSPGPU_FlushDataCache(fadePixels, 64 * 64 * sizeof(Pixel));
-        GX_DisplayTransfer((u32*)fadePixels, GX_BUFFER_DIM(64, 64), (u32*)fade_tex.data, GX_BUFFER_DIM(64, 64), TEXTURE_TRANSFER_FLAGS);
-        printf("ppfwait start\n");
-        gspWaitForPPF();*/
+        fadeVal = sync_get_val(sync_fade, row);
+        int whichImg = sync_get_val(sync_img, row);
+        whichImg = min(whichImg, 7);
+        if(whichImg != vramScrollImg) {
+            printf("Attempting load of tex: %d\n", whichImg);
+            C3D_TexDelete(&fade_tex);
+            texToVRAM2(&scrollImgs[whichImg], &fade_tex);
+            vramScrollImg = whichImg;
+        }
+        C3D_TexSetFilter(&fade_tex, GPU_LINEAR, GPU_LINEAR);
 
-        //
         //printf("ppf\n");
         hidScanInput();
         

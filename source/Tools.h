@@ -43,8 +43,8 @@ extern struct sync_device *rocket;
 #define SCREEN_WIDTH 400
 #define SCREEN_HEIGHT 240
 
-#define SCREEN_TEXTURE_WIDTH 512
-#define SCREEN_TEXTURE_HEIGHT 512
+#define SCREEN_TEXTURE_WIDTH 400
+#define SCREEN_TEXTURE_HEIGHT 400
 
 #define DISPLAY_TRANSFER_FLAGS \
     (GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(0) | GX_TRANSFER_RAW_COPY(0) | \
@@ -324,6 +324,6 @@ extern bool loadTex3DS(C3D_Tex* tex, C3D_TexCube* cube, const char* path);
 extern bool loadTex3DSMem(C3D_Tex* tex, C3D_TexCube* cube, const void* data, size_t size);
 
 extern u8* readFileMem(const char* fileName, u32* fileSize, bool linear);
-extern void waitForA();
+extern void waitForA(const char* msg);
 
 #endif

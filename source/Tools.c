@@ -2,6 +2,9 @@
 #include "vshader_flat_shbin.h"
 #include "Perlin.h"
 
+extern C3D_Tex fade_tex;
+extern float fadeVal;
+
 // Sync
 struct sync_device *rocket;
 
@@ -126,15 +129,22 @@ void fullscreenQuad(C3D_Tex texture, float iod, float iodmult) {
     
     resetShadeEnv();
     
-    float preShift = iodmult > 0.0 ? 0.05 : 0.0;
-    float textureLeft = -iod * iodmult + preShift;
-    float textureRight = (float)SCREEN_WIDTH / (float)SCREEN_TEXTURE_WIDTH - iod * iodmult - preShift;
-    float textureTop = 1.0 - (float)SCREEN_HEIGHT / (float)SCREEN_TEXTURE_HEIGHT + preShift * ((float)SCREEN_HEIGHT / (float)SCREEN_WIDTH);
-    float textureBottom = 1.0 - preShift * ((float)SCREEN_HEIGHT / (float)SCREEN_WIDTH);
-    
+    C3D_TexEnv* env = C3D_GetTexEnv(0);
+    u8 fadeValInt = fadeVal * 255.0;
+    C3D_TexEnvInit(env);
+    C3D_TexEnvColor(env, 0x00FFFFFF + (fadeValInt << 24));
+    C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_CONSTANT, 0);
+    C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
+
+    float preShift = 0.0; // iodmult > 0.0 ? 0.05 : 0.0;
+    float textureLeft = 0.0;
+    float textureRight = 400.0 / 512.0;
+    float textureTop = 1.0 - (float)SCREEN_HEIGHT / (float)512.0;
+    float textureBottom = 1.0;
+   
     // Turn off depth test as well as write
     C3D_DepthTest(false, GPU_GEQUAL, GPU_WRITE_COLOR);
-    
+   
     // Draw a textured quad directly
     C3D_ImmDrawBegin(GPU_TRIANGLES);
         
@@ -487,11 +497,9 @@ bool loadTex3DSMem(C3D_Tex* tex, C3D_TexCube* cube, const void* data, size_t siz
     return true;
 }
 
-extern C3D_Tex fade_tex;
-extern float fadeVal;
-
 void fade() {
     if(fadeVal > 0) {
+        C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_SRC_ALPHA, GPU_ONE_MINUS_SRC_ALPHA, GPU_CONSTANT_ALPHA, GPU_ONE_MINUS_CONSTANT_ALPHA);
         fullscreenQuad(fade_tex, 0.0, 0.0);
     }
 }
@@ -518,8 +526,12 @@ u8* readFileMem(const char* fileName, u32* fileSize, bool linear) {
 }
 
 // Wait for A B (good for debugging)
-void waitForA() {
-    /*while(1) {
+// #define SHITTY_BREAKPOINTS
+void waitForA(const char* msg) {
+#ifdef SHITTY_BREAKPOINTS
+    printf(msg);
+    printf("\n");
+    while(1) {
         hidScanInput();
         u32 kDown = hidKeysDown();
         if (kDown & KEY_A) {
@@ -533,5 +545,6 @@ void waitForA() {
          if (kDown & KEY_B) {
             break; // break in order to return to hbmenu
         }
-    }*/
+    }
+#endif
 }
