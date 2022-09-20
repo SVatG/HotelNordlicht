@@ -1,6 +1,6 @@
 # Hotel Nordlicht
 
-source code for the 2019 SVatG demo "Hotel Nordlicht" for Nintendo 3DS, as released, with no code cleanup but
+source code for the 2022 SVatG demo "Hotel Nordlicht" for Nintendo 3DS, as released, with no code cleanup but
 the tree and build system improved somewhat over the state it was in at the party
 
 Now released: https://demozoo.org/productions/313269/ (Video: https://www.youtube.com/watch?v=WQu18AeJMz8 )
