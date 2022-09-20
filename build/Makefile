@@ -14,20 +14,22 @@ SOURCES := $(BASEDIR)/source \
 		   $(BASEDIR)/source/Shaders \
 		   $(BASEDIR)/source/Rocket
 DATA := $(BASEDIR)/data
-#ASSETS := $(BASEDIR)/asset_source
+ASSETS := $(BASEDIR)/assets
+ROMFS := $(BASEDIR)/romfs
 
 # Libraries
 LIBDIRS := $(DEVKITPRO)/libctru
 LIBS := -lcitro3d -lctru -lm
 
 # Vpath for out of tree build
-VPATH := $(BUILD):$(SOURCES):$(DATA)
+VPATH := $(BUILD):$(SOURCES):$(DATA):$(ASSETS):$(ROMFS)
 
 # Tools
 CC := arm-none-eabi-gcc
 AS := arm-none-eabi-as
 NM := arm-none-eabi-nm
 LD := $(CC)
+TEX := tex3ds
 
 # Tool flags
 ARCH := -g -march=armv6k -mtune=mpcore -mfloat-abi=hard -mword-relocations
@@ -41,22 +43,14 @@ LDFLAGS := -specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map) \
 CFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 PICAFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/Shaders/*.v.pica)))
 BINFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
-#PNGFILES := $(foreach dir,$(ASSETS),$(notdir $(wildcard $(dir)/*.png)))
+PNGFILES := $(foreach dir,$(ASSETS),$(notdir $(wildcard $(dir)/*.png)))
 
-# Output file
+# Output files
 OUTPUT := $(CURDIR)/$(TARGET)
-
 OFILES := $(addsuffix .o,$(BINFILES)) \
-	  $(PICAFILES:.v.pica=.shbin.o) \
-	  $(CFILES:.c=.o)
-
-# Actual binary
-all: $(OUTPUT).3dsx
-$(OUTPUT).3dsx: $(OUTPUT).elf $(OUTPUT).smdh
-$(OUTPUT).elf: $(OFILES)
-
-clean:
-	rm -fr $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf *.o *.h *.lst *.shbin *~
+	  	  $(PICAFILES:.v.pica=.shbin.o) \
+	  	  $(CFILES:.c=.o)
+ROMFILES_PNG := $(PNGFILES:.png=.bin)
 
 # Want GNU extended syntax
 .SUFFIXES:
@@ -67,7 +61,21 @@ clean:
 
 %.o: %.s
 	$(AS) $(ASFLAGS) -c $< -o $@ 
-	
+
+# PNG-to-bin with tex3ds
+%.bin: %.png
+	$(TEX) $< -o $(ROMFS)/$@
+
+# flac-to-bin / mp3-to-bin / ogg-to-bin with basic music converter
+%.bin: %.flac
+	./../tooling/convertmusic.sh $< $(ROMFS)/$@
+
+%.bin: %.mp3
+	./../tooling/convertmusic.sh $< $(ROMFS)/$@
+
+%.bin: %.ogg
+	./../tooling/convertmusic.sh $< $(ROMFS)/$@
+
 # Basic "binary blob" build rule
 %.bin.o: %.bin
 	bin2s $< | $(AS) -o $(@)
@@ -91,18 +99,23 @@ endef
 %.shbin.o : %.v.pica
 	$(call shader-as,$<)
 
-%.shbin.o : %.shlist
-	$(call shader-as,$(foreach file,$(shell cat $<),$(dir $<)/$(file)))
-
 # App metainfo
 %.smdh: $(APP_ICON) $(MAKEFILE_LIST)
 	smdhtool --create "$(TARGET)" "$(DESC)" "$(AUTHOR)" $(BASEDIR)/icon.png $@
 
 # Binary from elf build rule
 %.3dsx: %.elf
-	3dsxtool $< --smdh=$(BASEDIR)build/$(TARGET).smdh --romfs=$(BASEDIR)romfs/ $(_3DSXFLAGS) $@
+	3dsxtool $< --smdh=$(BASEDIR)build/$(TARGET).smdh --romfs=$(ROMFS)/ $(_3DSXFLAGS) $@
 
 # Linking rule
 %.elf: 
 	$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 	$(NM) -CSn $@ > $(notdir $*.lst)
+
+# Actual binary
+all: $(OUTPUT).3dsx
+$(OUTPUT).3dsx: $(OUTPUT).elf $(OUTPUT).smdh $(ROMFILES_PNG) music.bin
+$(OUTPUT).elf: $(OFILES)
+
+clean:
+	rm -fr $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf *.o *.h *.lst *.shbin *~ $(ROMFS)/tex_*.bin $(ROMFS)/music.bin

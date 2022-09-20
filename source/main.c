@@ -205,7 +205,7 @@ int main() {
     romfsInit();
     
     // Open music
-    music_bin = readFileMem("romfs:/music2.bin", &music_bin_size, false);
+    music_bin = readFileMem("romfs:/music.bin", &music_bin_size, false);
     
     // Rocket startup
 #ifndef SYNC_PLAYER

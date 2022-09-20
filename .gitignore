@@ -2,4 +2,5 @@
 !/build/Makefile
 *~
 *.3dsx
-
+/romfs/tex_*.bin
+/romfs/music.bin
