@@ -8,7 +8,11 @@ DESC := Hotel Nordlicht
 
 # Working directories
 BUILD := $(BASEDIR)/build
-SOURCES := $(BASEDIR)/source $(BASEDIR)/source/VectorLibrary $(BASEDIR)/source/Rocket
+SOURCES := $(BASEDIR)/source \
+		   $(BASEDIR)/source/VectorLibrary \
+		   $(BASEDIR)/source/GraphicsLibrary \
+		   $(BASEDIR)/source/Shaders \
+		   $(BASEDIR)/source/Rocket
 DATA := $(BASEDIR)/data
 #ASSETS := $(BASEDIR)/asset_source
 
@@ -27,21 +31,15 @@ LD := $(CC)
 
 # Tool flags
 ARCH := -g -march=armv6k -mtune=mpcore -mfloat-abi=hard -mword-relocations
-CFLAGS := -Wno-missing-braces -O3 \
-          -std=c99 \
-	  -fomit-frame-pointer -ffunction-sections \
-	  -mfloat-abi=hard -ffast-math \
-	  $(ARCH) -D__3DS__ \
-	  -DABGR32Pixels \
-	  $(foreach dir,$(LIBDIRS),-I$(dir)/include) -I$(BUILD)
+CFLAGS := -Wno-missing-braces -O3 -std=c99 -fomit-frame-pointer -ffunction-sections -mfloat-abi=hard -ffast-math $(ARCH) -D__3DS__ -DABGR32Pixels \
+		$(foreach dir,$(LIBDIRS),-I$(dir)/include) -I$(BUILD)
 ASFLAGS := 
 LDFLAGS := -specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map) \
 	   $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 # Input files
 CFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-PICAFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.v.pica)))
-SHLISTFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.shlist)))
+PICAFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/Shaders/*.v.pica)))
 BINFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 #PNGFILES := $(foreach dir,$(ASSETS),$(notdir $(wildcard $(dir)/*.png)))
 
@@ -50,7 +48,6 @@ OUTPUT := $(CURDIR)/$(TARGET)
 
 OFILES := $(addsuffix .o,$(BINFILES)) \
 	  $(PICAFILES:.v.pica=.shbin.o) \
-	  $(SHLISTFILES:.shlist=.shbin.o) \
 	  $(CFILES:.c=.o)
 
 # Actual binary

@@ -23,13 +23,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "Pixels.h"
-#include "Bitmap.h"
-#include "Drawing.h"
-#include "Perlin.h"
+#include "GraphicsLibrary/Pixels.h"
+#include "GraphicsLibrary/Bitmap.h"
+#include "GraphicsLibrary/Drawing.h"
+
 #include "VectorLibrary/Vector.h"
 #include "VectorLibrary/Matrix.h"
 
+#include "Perlin.h"
 #include "Rasterize.h"
 
 #define min(a,b) (((a)<(b))?(a):(b))
