@@ -8,7 +8,7 @@
    version="1.1"
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
    sodipodi:docname="foreground_scroller2.svg"
-   inkscape:export-filename="scrolltext1.png"
+   inkscape:export-filename="scrolltext6.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -189,28 +189,33 @@
        xml:space="preserve"
        style="font-size:25.7672px;line-height:19.4542px;fill:#ffffff;stroke:none;stroke-width:0.997;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter5351)"
        x="278.80127"
-       y="450.69846"
+       y="460.69846"
        id="text2200"><tspan
          sodipodi:role="line"
          x="278.80127"
-         y="450.69846"
+         y="460.69846"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.7672px;font-family:'Treasure Map Deadhand';-inkscape-font-specification:'Treasure Map Deadhand';text-align:center;text-anchor:middle;fill:#ffffff;stroke:none;stroke-width:0.997;stroke-dasharray:none;stroke-opacity:1"
-         id="tspan7549">the music this time is by </tspan><tspan
+         id="tspan7693">we send YARRRS to:</tspan><tspan
          sodipodi:role="line"
          x="278.80127"
-         y="471.12885"
+         y="481.12885"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.7672px;font-family:'Treasure Map Deadhand';-inkscape-font-specification:'Treasure Map Deadhand';text-align:center;text-anchor:middle;fill:#ffffff;stroke:none;stroke-width:0.997;stroke-dasharray:none;stroke-opacity:1"
-         id="tspan7561">Saga Musix,</tspan><tspan
+         id="tspan7748">titan - blackle - violet - rabenauge</tspan><tspan
          sodipodi:role="line"
          x="278.80127"
-         y="491.55923"
+         y="501.55923"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.7672px;font-family:'Treasure Map Deadhand';-inkscape-font-specification:'Treasure Map Deadhand';text-align:center;text-anchor:middle;fill:#ffffff;stroke:none;stroke-width:0.997;stroke-dasharray:none;stroke-opacity:1"
-         id="tspan7551">the code is by halcy, and the 3d</tspan><tspan
+         id="tspan7750">truck - all our mateys at the party</tspan><tspan
          sodipodi:role="line"
          x="278.80127"
-         y="511.98962"
+         y="521.98962"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.7672px;font-family:'Treasure Map Deadhand';-inkscape-font-specification:'Treasure Map Deadhand';text-align:center;text-anchor:middle;fill:#ffffff;stroke:none;stroke-width:0.997;stroke-dasharray:none;stroke-opacity:1"
-         id="tspan7553">is by halcy and dotUser</tspan></text>
+         id="tspan7711" /><tspan
+         sodipodi:role="line"
+         x="278.80127"
+         y="542.41998"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25.7672px;font-family:'Treasure Map Deadhand';-inkscape-font-specification:'Treasure Map Deadhand';text-align:center;text-anchor:middle;fill:#ffffff;stroke:none;stroke-width:0.997;stroke-dasharray:none;stroke-opacity:1"
+         id="tspan7719" /></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:Impact;-inkscape-font-specification:Impact;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -482,5 +487,13 @@
    style="fill:#ffffff;stroke:none" />
 
 </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:26.6667px;font-family:'Treasure Map Deadhand';-inkscape-font-specification:'Treasure Map Deadhand';text-align:center;text-anchor:middle;fill:#2b0000;stroke:none;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       x="262.47711"
+       y="530.90045"
+       id="text7733"><tspan
+         sodipodi:role="line"
+         id="tspan7731"></tspan></text>
   </g>
 </svg>

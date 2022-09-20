@@ -221,6 +221,7 @@
 		</track>
 		<track name="doorsOdd.rot">
 			<key interpolation="0" value="0" row="0"/>
+			<key interpolation="2" value="0" row="128"/>
 			<key interpolation="0" value="1" row="144"/>
 			<key interpolation="0" value="1" row="387"/>
 			<key interpolation="0" value="0.5" row="388"/>
@@ -338,32 +339,32 @@
 		<track name="global.fade">
 			<key interpolation="0" value="0" row="0"/>
 			<key interpolation="1" value="0" row="284"/>
-			<key interpolation="0" value="1" row="292"/>
-			<key interpolation="1" value="1" row="352"/>
+			<key interpolation="0" value="0.6" row="292"/>
+			<key interpolation="1" value="0.6" row="352"/>
 			<key interpolation="0" value="0" row="360"/>
 			<key interpolation="1" value="0" row="416"/>
-			<key interpolation="0" value="1" row="424"/>
-			<key interpolation="1" value="1" row="472"/>
+			<key interpolation="0" value="0.6" row="424"/>
+			<key interpolation="1" value="0.6" row="472"/>
 			<key interpolation="0" value="0" row="480"/>
 			<key interpolation="1" value="0" row="672"/>
-			<key interpolation="0" value="1" row="680"/>
-			<key interpolation="1" value="1" row="768"/>
+			<key interpolation="0" value="0.6" row="680"/>
+			<key interpolation="1" value="0.6" row="768"/>
 			<key interpolation="0" value="0" row="776"/>
 			<key interpolation="1" value="0" row="928"/>
-			<key interpolation="0" value="1" row="936"/>
-			<key interpolation="1" value="1" row="984"/>
+			<key interpolation="0" value="0.6" row="936"/>
+			<key interpolation="1" value="0.6" row="984"/>
 			<key interpolation="0" value="0" row="992"/>
 			<key interpolation="1" value="0" row="1184"/>
-			<key interpolation="0" value="1" row="1192"/>
-			<key interpolation="1" value="1" row="1288"/>
+			<key interpolation="0" value="0.8" row="1192"/>
+			<key interpolation="1" value="0.8" row="1288"/>
 			<key interpolation="0" value="0" row="1296"/>
 			<key interpolation="1" value="0" row="1440"/>
-			<key interpolation="0" value="1" row="1448"/>
-			<key interpolation="1" value="1" row="1544"/>
+			<key interpolation="0" value="0.8" row="1448"/>
+			<key interpolation="1" value="0.8" row="1544"/>
 			<key interpolation="0" value="0" row="1552"/>
 			<key interpolation="1" value="0" row="1984"/>
-			<key interpolation="0" value="1" row="1992"/>
-			<key interpolation="1" value="1" row="2048"/>
+			<key interpolation="0" value="0.6" row="1992"/>
+			<key interpolation="1" value="0.6" row="2048"/>
 			<key interpolation="0" value="0" row="2056"/>
 			<key interpolation="1" value="0" row="2080"/>
 			<key interpolation="0" value="1" row="2112"/>

@@ -2,7 +2,7 @@
 BASEDIR := ../
 
 # Binary name, author name, desc
-TARGET := nordlicht22
+TARGET := nordlicht22_cap3d
 AUTHOR := SVatG
 DESC := Hotel Nordlicht
 
