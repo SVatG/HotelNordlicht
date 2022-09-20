@@ -1,7 +1,7 @@
 /**
- * Nordlicht 2019 - Skate Station
+ * Nordlicht 2022 - Hotel Nordlicht
  * 
- * SVatG 2019 ~ halcy / wrl
+ * SVatG 2022 ~ halcy / Saga Musix / dotUser
  **/
 
 #include "Tools.h"
@@ -186,9 +186,9 @@ void texToVRAM2(C3D_Tex* linear, C3D_Tex* vram) {
 C3D_Tex scrollImgs[8];
 int vramScrollImg = -1;
 
-int main() {    
-    bool DUMPFRAMES = true;
-    bool DUMPFRAMES_3D = true;
+int main() {
+    bool DUMPFRAMES = false;
+    bool DUMPFRAMES_3D = false;
 
     // Initialize graphics
     gfxInit(GSP_RGBA8_OES, GSP_BGR8_OES, false);
